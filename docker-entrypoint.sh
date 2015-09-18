@@ -46,13 +46,6 @@ chown rebar:rebar /etc/consul_m_acl.json
 
 # Make sure rebar user and ssh are in place
 su -l -c 'ssh-keygen -q -b 2048 -P "" -f /home/rebar/.ssh/id_rsa' rebar
-mkdir -p /root/.ssh
-cd /root/.ssh
-touch authorized_keys
-cat authorized_keys /home/rebar/.ssh/id_rsa.pub >> authorized_keys.new
-sort -u <authorized_keys.new >authorized_keys
-rm authorized_keys.new
-chmod 600 /root/.ssh/authorized_keys
 cd /opt/digitalrebar/core
 
 if [[ $DR_DEV ]]; then
