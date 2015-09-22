@@ -1,27 +1,14 @@
-FROM ubuntu:14.04
-
-RUN apt-get update && apt-get install -y curl unzip \
-  && mkdir -p /tmp/consul /ui \
-  && curl -fL -o consul.zip https://dl.bintray.com/mitchellh/consul/0.5.2_linux_amd64.zip \
-  && curl -fL -o consul_ui.zip https://dl.bintray.com/mitchellh/consul/0.5.2_web_ui.zip \
-  && unzip consul.zip -d /usr/local/bin \
-  && unzip consul_ui.zip -d /ui \
-  && rm consul.zip consul_ui.zip \
-  && mkdir -p /etc/consul.d \
-  && apt-get purge -y unzip
-
-ENV GOPATH /go
+FROM digitalrebar/base
 
 # Set our command
 ENTRYPOINT ["/sbin/docker-entrypoint.sh"]
 
 RUN groupadd -r rebar && useradd -r -u 1000 -g rebar -p '$6$afAL.34B$T2WR6zycEe2q3DktVtbH2orOroblhR6uCdo5n3jxLsm47PBm9lwygTbv3AjcmGDnvlh0y83u2yprET8g9/mve.' -m -d /home/rebar -s /bin/bash rebar \
   && mkdir -p /opt/digitalrebar \
-  && mkdir -p /etc/consul.d \
   && mkdir -p /etc/sudoers.d \
   && mkdir -p /home/rebar/.ssh
 
-COPY docker-entrypoint.sh /sbin/docker-entrypoint.sh
+COPY entrypoint.d/*.sh /usr/local/entrypoint.d/
 COPY rebar_sudoer /etc/sudoers.d/rebar
 COPY ssh_config /home/rebar/.ssh/config
 COPY rebar-api.json /etc/consul.d/rebar-api.json
@@ -34,21 +21,12 @@ RUN apt-get -y install software-properties-common wget \
   && apt-add-repository ppa:ansible/ansible \
   && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - \
   && apt-get -y update \
-  && apt-get -y install ruby2.1 ruby2.1-dev git make cmake curl swig3.0 libcimcclient0-dev libxml2-dev libcurl4-openssl-dev libssl-dev build-essential jq sudo libopenwsman-dev postgresql-9.4 postgresql-client-9.4 libpq5 libpq-dev autoconf uuid-runtime ansible python-netaddr \
+  && apt-get -y install ruby2.1 ruby2.1-dev make cmake curl swig3.0 libcimcclient0-dev libxml2-dev libcurl4-openssl-dev libssl-dev build-essential jq sudo libopenwsman-dev postgresql-9.4 postgresql-client-9.4 libpq5 libpq-dev autoconf uuid-runtime ipmitool ansible python-netaddr \
   && gem install bundler \
   && gem install net-http-digest_auth \
   && gem install berkshelf \
-  && curl -fgL -o '/tmp/goball.tgz' 'https://storage.googleapis.com/golang/go1.4.linux-amd64.tar.gz' \
-  && rm -rf /usr/local/go \
-  && tar -C '/usr/local' -zxf /tmp/goball.tgz \
-  && rm /tmp/goball.tgz \
-  && curl -fgL -o '/tmp/chef.deb' 'http://opscode-omnibus-packages.s3.amazonaws.com/ubuntu/12.04/x86_64/chef_11.12.8-1_amd64.deb' \
-  && dpkg -i /tmp/chef.deb \
-  && rm -f /tmp/chef.deb \
   && /usr/local/go/bin/go get -u github.com/digitalrebar/rebar-api/rebar \
   && cp "$GOPATH/bin/rebar" /usr/local/bin \
-  && rm -rf /usr/local/go \
-  && rm -rf $GOPATH \
   && [ -d /opt/digitalrebar/core ] || git clone https://github.com/digitalrebar/core /opt/digitalrebar/core \
   && mkdir -p /var/run/rebar \
   && mkdir -p /var/cache/rebar/cookbooks \
@@ -67,7 +45,3 @@ RUN apt-get -y install software-properties-common wget \
   && ln -s /var/cache/rebar/bin/pumactl /usr/bin/pumactl \
   && chown rebar:rebar /home/rebar/.ssh/config \
   && chmod 644 /home/rebar/.ssh/config
-
-# These are the ports being exposed for this system
-# We don't want other systems inheriting this
-# EXPOSE 3000
